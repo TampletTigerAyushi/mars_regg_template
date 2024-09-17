@@ -302,7 +302,7 @@ def train_udf(df):
     
 
     X = df[feature_columns]  # feature (time in numeric form)
-    y = df['price']  # target (price)
+    y = df['selling_price']  # target (price)
 
     train_size = int(len(df) * 0.8)
     X_train, X_test = X.iloc[:train_size], X.iloc[train_size:]
