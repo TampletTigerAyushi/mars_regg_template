@@ -15,7 +15,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install numpy==1.19.1
+# %pip install numpy==1.19.1
 
 # COMMAND ----------
 
