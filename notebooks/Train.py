@@ -569,9 +569,9 @@ for key, value in Country_dict.items():
         model=model,
         model_name=f"{model_name}_{key}_model_1709_1",
         model_runtime_env="python",
-        train_metrics=commodity_dict[key]['train_metrics'],
-        test_metrics=commodity_dict[key]['test_metrics'],
-        feature_table_path=feature_table_path,  # Adjust this line if feature_table_path is specific to each commodity
+        train_metrics=Country_dict[key]['train_metrics'],
+        test_metrics=Country_dict[key]['test_metrics'],
+        feature_table_path=feature_table_path,  # Adjust this line if feature_table_path is specific to each Country 
         ground_truth_table_path=gt_table_path,
         train_output_path=output_1_table_path,
         train_output_rows=train_output_df.count(),
@@ -589,14 +589,13 @@ for key, value in Country_dict.items():
         horizon=horizon,
         frequency=frequency,
         example_input=value['example_input'],
-        #signature= commodity.get("signature", None),
+        #signature= Country .get("signature", None),
         # register_in_feature_store=True,  # Uncomment if needed
         model_configs=model_configs,
         tracking_url=tracking_url,
         verbose=True
 
     )
-    commodity_dict[key]['model_artifact_id']=model_artifact_id
 
 #     model_version = get_latest_model_version(model_configs) + 1
 #     train_output_df = train_output_df.withColumn("model_name", F.lit(model_name).cast("string"))
