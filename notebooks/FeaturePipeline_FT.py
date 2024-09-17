@@ -1,7 +1,7 @@
 # Databricks notebook source
 # DBTITLE 1,Installing MLCore SDK
 # MAGIC %pip install sparkmeasure
-# MAGIC
+# MAGIC import numpy as np
 
 # COMMAND ----------
 
@@ -211,41 +211,6 @@ def update_task_logger(catalog_name, db_name, task_logger_table_name, end_marker
 
 # COMMAND ----------
 
-# if is_scheduled:
-#   pickle_file_path = f"/mnt/FileStore/{output_table_configs['output_1']['schema']}"
-#   dbutils.fs.mkdirs(pickle_file_path)
-#   print(f"Created directory : {pickle_file_path}")
-#   pickle_file_path = f"/dbfs/{pickle_file_path}/{output_table_configs['output_1']['table']}.pickle"
-
-#   try : 
-#     with open(pickle_file_path, "rb") as handle:
-#         obj_properties = pickle.load(handle)
-#         print(f"Instance loaded successfully")
-#   except Exception as e:
-#     print(f"Exception while loading cache : {e}")
-#     obj_properties = {}
-#   print(f"Existing Cache : {obj_properties}")
-
-#   if not obj_properties :
-#     start_marker = 1
-#   elif obj_properties and obj_properties.get("end_marker",0) == 0:
-#     start_marker = 1
-#   else :
-#     start_marker = obj_properties["end_marker"] + 1
-#   end_marker = start_marker + batch_size - 1
-# else :
-#   start_marker = 1
-#   end_marker = source_1_df.count()
-
-# print(f"Start Marker : {start_marker}\nEnd Marker : {end_marker}")
-
-# COMMAND ----------
-
-# DBTITLE 1,Perform some feature engineering step. 
-# source_1_df = source_1_df.filter((F.col("id") >= start_marker) & (F.col("id") <= end_marker))
-
-# COMMAND ----------
-
 if task.lower() != "fe":
     task_logger_table_name = f"{output_table_configs['output_1']['table']}_task_logger"
     print(task_logger_table_name)
@@ -318,6 +283,14 @@ data['age'] = 2020 - data['year']
 data.drop('year',axis=1,inplace = True)
 data.drop(labels='name',axis= 1, inplace = True)
 data.head().to_string()
+
+# COMMAND ----------
+
+countries = ['USA', 'Canada', 'India', 'Brazil']
+
+# COMMAND ----------
+
+data['Country'] = np.random.choice(countries, size=len(df))
 
 # COMMAND ----------
 
