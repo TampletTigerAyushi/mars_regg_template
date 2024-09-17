@@ -1,0 +1,54 @@
+trigger:
+  branches:
+    include:
+      - DEV
+      - QA
+      - UAT
+      - PROD
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+  - name: repo_parent_folder
+    type: string
+    default: MLOpsFlow
+  - name: user_group_name
+    type: string
+    default: MLCore_Services
+
+variables:
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/UAT')}}:
+    - group: SDK-UAT
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/PROD')}}:
+    - group: SDK-PROD
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/QA')}}:
+    - group: SDK-QA
+  - ${{ if not(or(eq(variables['Build.SourceBranch'], 'refs/heads/QA'), eq(variables['Build.SourceBranch'], 'refs/heads/UAT'), eq(variables['Build.SourceBranch'], 'refs/heads/PROD'))) }}:
+    - group: SDK-DEV
+  
+
+stages:
+  - stage: PublishToDBFS
+    displayName: publish notebooks
+    jobs:
+      - job: Publish
+        steps:
+          - bash: pip install requests && pip install python-dotenv && pip install databricks-cli
+            displayName: installing requests, python-dotenv and databricks-cli
+
+          - script: |
+              SUBSTRING=$(echo $(Build.Repository.Name)| cut -d'/' -f 2)
+              echo $SUBSTRING
+              echo "##vso[task.setvariable variable=projectName]$SUBSTRING"
+            displayName: 'project name'
+
+          - task: PythonScript@0
+            displayName: "CI Pipeline"
+            inputs:
+              scriptSource: filePath
+              scriptPath: azure-db-repos-pipelinesv3/utility/CI_pipeline.py
+              arguments: $(AZ_CLIENT_ID) $(AZ_CLIENT_SECRET) $(AZ_TENANT) $(DATABRICKS_HOST) "/Repos/${{ parameters.repo_parent_folder }}" $(Build.Repository.Uri) $(projectName) $(BRANCH) "${{ parameters.user_group_name }}"
+

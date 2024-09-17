@@ -1,0 +1,18 @@
+jobs:
+  de_ft_1:
+    depends_on: null
+  de_gt_1:
+    depends_on: null
+
+  fe_ft_1:
+    depends_on: 
+      - de_ft_1
+  
+  fe_gt_1:
+    depends_on: 
+      - de_gt_1
+
+  train1:
+    depends_on:
+      - fe_ft_1
+      - fe_gt_1

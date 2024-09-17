@@ -1,0 +1,53 @@
+resources:
+  jobs:
+    fe_ft_1:
+      name: fe_ft_1
+      type: Feature_Engineering
+
+      email_notifications:
+        on_failure:
+          - vamsi.podipireddi@tigeranalytics.com
+
+      tasks:
+        - task_key: Feature_Engineering_FT
+          
+          notebook_task:
+            notebook_path: /notebooks/FeaturePipeline_FT
+            base_parameters:
+              env: dev
+              task: fe
+          timeout_seconds: 7200
+          libraries:
+            - maven:
+                coordinates: "ch.cern.sparkmeasure:spark-measure_2.12:0.24"
+
+      access_control_list:
+        - group_name: MLCore_Services
+          permission_level: CAN_MANAGE
+
+
+    fe_gt_1:
+      name: fe_gt_1
+      type: Feature_Engineering
+      
+      email_notifications:
+        on_failure:
+          - vamsi.podipireddi@tigeranalytics.com
+
+      tasks:
+        - task_key: Feature_Engineering_GT
+          notebook_task:
+            notebook_path: /notebooks/FeaturePipeline_GT
+            base_parameters:
+              env: dev 
+              task: fe
+          timeout_seconds: 7200
+          libraries:
+            - maven:
+                coordinates: "ch.cern.sparkmeasure:spark-measure_2.12:0.24"
+      
+      access_control_list:
+        - group_name: MLCore_Services
+          permission_level: CAN_MANAGE
+          
+    

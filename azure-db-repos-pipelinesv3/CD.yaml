@@ -1,0 +1,131 @@
+resources:
+  pipelines:
+    - pipeline: ciPipeline  # Local identifier for the dependency
+      source: SDK-car_price_Regressionv3/CI  # Path to the first pipeline's YAML file
+      trigger:
+        branches:
+          include:
+            - DEV
+            - QA
+            - UAT
+            - PROD
+
+trigger: none
+#   branches:
+#     include:
+#       - DEV
+#       - QA
+#       - UAT
+#       - PROD
+
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+  - name: repo_parent_folder
+    type: string
+    default: MLOpsFlow
+
+  - name: user_group_name
+    type: string
+    default: MLCore_Services
+
+  - name: pipeline_id
+    type: string
+    default: None
+
+  - name: model_name
+    type: string
+    default: None
+
+  - name: model_version
+    type: string
+    default: None
+
+  - name: env
+    type: string
+    default: None
+
+  - name: api_trigger
+    type: string
+    default: no
+
+  - name: model_approval_id
+    type: string
+    default: None
+    
+  - name: model_artifact_id
+    type: string
+    default: None
+
+variables:
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/UAT')}}:
+    - group: SDK-UAT
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/PROD')}}:
+    - group: SDK-PROD
+  - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/QA')}}:
+    - group: SDK-QA
+  - ${{ if not(or(eq(variables['Build.SourceBranch'], 'refs/heads/QA'), eq(variables['Build.SourceBranch'], 'refs/heads/UAT'), eq(variables['Build.SourceBranch'], 'refs/heads/PROD'))) }}:
+    - group: SDK-DEV
+  
+
+stages:
+  - stage: PublishToDBFS
+    displayName: publish notebooks
+    jobs:
+      - job: Publish
+        steps:
+          - script: |
+              python azure-db-repos-pipelinesv3/utility/get_databricks_access_token.py $(AZ_CLIENT_ID) $(AZ_CLIENT_SECRET) $(AZ_TENANT) > output.txt
+            displayName: 'Run extract_value.py script with parameters'
+
+          - script: |
+              extracted_token=$(cat output.txt)
+              echo "##vso[task.setvariable variable=DATABRICKS_TOKEN]$extracted_token"
+            displayName: 'Set pipeline variable from script output'
+
+          - bash: pip install requests && pip install python-dotenv && pip install databricks-cli
+            displayName: installing requests, python-dotenv and databricks-cli
+
+          - script: |
+              SUBSTRING=$(echo $(Build.Repository.Name)| cut -d'/' -f 2)
+              echo $SUBSTRING
+              echo "##vso[task.setvariable variable=projectName]$SUBSTRING"
+            displayName: 'project name'
+
+          
+          - task: PythonScript@0
+            displayName: 'Job_Composer'
+            inputs:
+              scriptSource:  filePath
+              scriptPath: azure-db-repos-pipelinesv3/utility/job_automate.py
+              arguments: $(projectName) ${{ parameters.repo_parent_folder }} $(DATABRICKS_HOST) $(DATABRICKS_TOKEN) $(DEPLOY_ENV) $(API_BASE_URL) $(AZ_CLIENT_ID) $(AZ_CLIENT_SECRET) $(AZ_TENANT) $(System.DefinitionId) ${{ parameters.user_group_name }} $(Build.BuildId) $(Build.DefinitionName) $(System.CollectionUri) $(System.TeamProject) ${{ parameters.model_name }} ${{ parameters.model_version }} ${{ parameters.env }} ${{ parameters.api_trigger }} ${{ parameters.model_approval_id }} ${{ parameters.model_artifact_id }}
+
+          - task: PythonScript@0
+            displayName: 'Create train_meta_job'
+            inputs:
+              scriptSource:  filePath
+              scriptPath: azure-db-repos-pipelinesv3/utility/create_meta_train.py
+              arguments: $(DEPLOY_ENV) $(Build.SourceBranch) $(System.CollectionUri) ${{ parameters.repo_parent_folder }} $(DATABRICKS_HOST) $(DATABRICKS_TOKEN) ${{ parameters.user_group_name }}
+            condition: eq('${{ parameters.api_trigger }}', 'no')
+
+          - task: PythonScript@0
+            displayName: 'Create retrain_meta_job'
+            inputs:
+              scriptSource:  filePath
+              scriptPath: azure-db-repos-pipelinesv3/utility/create_meta_retrain.py
+              arguments: $(DEPLOY_ENV) $(Build.SourceBranch) $(System.CollectionUri) ${{ parameters.repo_parent_folder }} $(DATABRICKS_HOST) $(DATABRICKS_TOKEN) ${{ parameters.user_group_name }}
+            condition: eq('${{ parameters.api_trigger }}', 'no')
+
+          - task: PythonScript@0
+            displayName: 'Devops_Observability'
+            inputs:
+              scriptSource:  filePath
+              scriptPath: azure-db-repos-pipelinesv3/utility/devops_observability.py
+              arguments: $(API_BASE_URL) $(AZ_CLIENT_ID) $(AZ_CLIENT_SECRET) $(AZ_TENANT) $(DEPLOY_ENV) $(Build.Repository.Uri) $(Build.SourceVersion) "$(Build.RequestedFor)" $(Build.DefinitionName) $(System.DefinitionId) $(Build.BuildId) $(Build.SourceBranch) $(System.TeamProject) $(System.CollectionUri) ${{ parameters.repo_parent_folder }} $(DATABRICKS_HOST) $(AZURE_DEVOPS_PAT) "Train_Meta_Job" "Retrain_Meta_Job" ${{ parameters.model_name }} ${{ parameters.api_trigger }} ${{ parameters.model_approval_id }} ${{ parameters.model_artifact_id }}
+          
+
+          
+

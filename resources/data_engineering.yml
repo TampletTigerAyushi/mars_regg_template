@@ -1,0 +1,67 @@
+resources:
+  jobs:
+    de_ft_1:
+      name: de_ft_1
+      type: Data_Ingestion
+      tags:  
+        project: "car_price_repov3"
+      schedule:
+        # Run every day at 8:37 AM
+        quartz_cron_expression: '0 0/2 * 1/1 * ? *'
+        timezone_id: Asia/Calcutta
+        pause_status: PAUSED
+
+      email_notifications:
+        on_failure:
+          - vamsi.podipireddi@tigeranalytics.com
+
+      tasks:
+        - task_key: DataEngineering_FT
+          
+          notebook_task:
+            notebook_path: /notebooks/DataEngineering_FT
+            base_parameters:
+              env: dev 
+              task: de
+          timeout_seconds: 7200
+          libraries:
+            - maven:
+                coordinates: "ch.cern.sparkmeasure:spark-measure_2.12:0.24"
+
+      access_control_list:
+        - group_name: MLCore_Services
+          permission_level: CAN_MANAGE
+
+
+    de_gt_1:
+      name: de_gt_1
+      type: Data_Ingestion
+      tags:  
+        project: "car_price_repov3"
+      schedule:
+        # Run every day at 8:37 AM
+        quartz_cron_expression: '0 0/2 * 1/1 * ? *'
+        timezone_id: Asia/Calcutta
+        pause_status: PAUSED
+
+      email_notifications:
+        on_failure:
+          - vamsi.podipireddi@tigeranalytics.com
+
+      tasks:
+        - task_key: DataEngineering_GT
+          notebook_task:
+            notebook_path: /notebooks/DataEngineering_GT
+            base_parameters:
+              env: dev 
+              task: de
+          timeout_seconds: 7200
+          libraries:
+            - maven:
+                coordinates: "ch.cern.sparkmeasure:spark-measure_2.12:0.24"
+      
+      access_control_list:
+        - group_name: MLCore_Services
+          permission_level: CAN_MANAGE
+          
+    

@@ -1,0 +1,32 @@
+resources:
+  jobs:
+    car_price_1109_azure_v2_inference:
+      name: car_price_1109_azure_v2_inference
+      type: Inference
+      #is_deterministic: False
+
+      schedule:
+        # Run every day at 8:37 AM
+        quartz_cron_expression: '0 0/2 * 1/1 * ? *'
+        timezone_id: Asia/Calcutta
+        pause_status: PAUSED
+
+      email_notifications:
+        on_failure:
+          - vamsi.podipireddi@tigeranalytics.com
+
+      tasks:
+        - task_key: Inference
+          notebook_task:
+            notebook_path: /notebooks/Inference
+            base_parameters:
+              env: dev
+          timeout_seconds: 7200
+          libraries:
+            - maven:
+                coordinates: "ch.cern.sparkmeasure:spark-measure_2.12:0.24"
+      
+      access_control_list:
+        - group_name: MLCore_Services
+          permission_level: CAN_MANAGE
+          

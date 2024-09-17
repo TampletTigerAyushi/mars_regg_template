@@ -1,0 +1,28 @@
+resources:
+  jobs:
+    train1:
+      name: train1
+      type: MODEL_TRAIN
+      
+      email_notifications:
+        on_failure:
+          - vamsi.podipireddi@tigeranalytics.com
+
+      tasks:  
+        - task_key: Train
+          notebook_task:
+            notebook_path: /notebooks/Train
+            base_parameters:
+              env: dev
+          timeout_seconds: 7200
+          libraries:
+            - maven:
+                coordinates: "ch.cern.sparkmeasure:spark-measure_2.12:0.24"
+
+      access_control_list:
+        - group_name: MLCore_Services
+          permission_level: CAN_MANAGE
+           
+
+    
+    
