@@ -199,7 +199,7 @@ if date_filters and date_filters['ground_truth_table_date_filters'] and date_fil
 # COMMAND ----------
 
 ground_truth_data = gt_data.select([input_table_configs["input_2"]["primary_keys"]] + target_columns)
-features_data = ft_data.select([input_table_configs["input_1"]["primary_keys"]] + feature_columns + ['country'])
+features_data = ft_data.select([input_table_configs["input_1"]["primary_keys"]] + feature_columns + ['Country'])
 
 # COMMAND ----------
 
@@ -285,7 +285,7 @@ import base64
 
 # Define the schema for the output DataFrame
 result_schema = StructType([
-    StructField("country", StringType(), True),
+    StructField("Country", StringType(), True),
     StructField("output_df", StringType(), True),  # JSON string of the output DataFrame
     StructField("model", StringType(), True),  # Serialized model string
     StructField("train_metrics", StringType(), True),
@@ -339,12 +339,12 @@ def train_udf(df):
     
     # Convert the DataFrame to a JSON string
     output_json_str = output_df.to_json(orient='records', date_format='iso')
-    country = df["country"].iloc[0] if 'country' in df.columns else "Unknown"
+    Country = df["Country"].iloc[0] if 'Country' in df.columns else "Unknown"
     
     # Create a DataFrame with a single row containing the JSON string and the serialized model
     result_df = pd.DataFrame(
         {
-            "country": [country],
+            "Country": [Country],
             "output_df": [output_json_str],
             "model": [serialized_model],
             "train_metrics": [json.dumps(train_metrics)],
@@ -359,7 +359,7 @@ def train_udf(df):
 # COMMAND ----------
 
 #df = final_df.limit(1000)
-output_df = final_df_pandas.groupBy("country").applyInPandas(
+output_df = final_df_pandas.groupBy("Country").applyInPandas(
     train_udf,
     schema=result_schema
 )
@@ -379,16 +379,16 @@ import pickle
 import base64
 
 # Initialize the dictionary to store the results
-country_dict = {}
+Country_dict = {}
 
 for index, row in pandas_df.iterrows():
-    country = row['country']
+    Country = row['Country']
     output_df_list = json.loads(row['output_df'])
     model_bytes = base64.b64decode(row['model'])
     model = pickle.loads(model_bytes)
     
     # Add the data to the dictionary
-    country_dict[country] = {
+    Country_dict[Country] = {
         'output_df': output_df_list,
         'model': model,
         'train_metrics': json.loads(row['train_metrics']),
@@ -397,7 +397,7 @@ for index, row in pandas_df.iterrows():
     }
 
 
-print(country_dict)
+print(Country_dict)
 
 
 # COMMAND ----------
@@ -504,7 +504,7 @@ def get_latest_model_version(model_configs):
 # COMMAND ----------
 
 
-for key, value in country_dict.items():
+for key, value in Country_dict.items():
 
     #start tastmetrics and stage metrics
     taskmetrics = TaskMetrics(spark)
@@ -513,8 +513,8 @@ for key, value in country_dict.items():
     stagemetrics.begin()
 
     #1. Write the train_output_tables to HIVE
-    country=key
-    table_name = f"{model_name}_{country}_train_output_forecasting"
+    Country=key
+    table_name = f"{model_name}_{Country}_train_output_forecasting"
     if catalog_name and catalog_name.lower() != "none":
         spark.sql(f"USE CATALOG {catalog_name}")
 
