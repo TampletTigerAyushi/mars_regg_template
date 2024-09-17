@@ -15,6 +15,10 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install numpy==1.19.1
+
+# COMMAND ----------
+
 from sparkmeasure import StageMetrics, TaskMetrics
 from pyspark.sql import functions as F
 
@@ -360,7 +364,7 @@ def train_udf(df):
 # COMMAND ----------
 
 #df = final_df.limit(1000)
-output_df = final_df_pandas.groupby("Country").applyInPandas(
+output_df = final_df.groupBy("Country").applyInPandas(
     train_udf,
     schema=result_schema
 )
