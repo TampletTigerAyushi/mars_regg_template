@@ -10,12 +10,12 @@
 # MAGIC %pip install google-cloud-storage
 # MAGIC %pip install azure-storage-blob
 # MAGIC %pip install azure-identity
-# MAGIC %pip install protobuf==3.17.2
+# MAGIC #%pip install protobuf==3.17.2
 # MAGIC #%pip install numpy==1.19.1
 
 # COMMAND ----------
 
-# %pip install numpy==1.19.1
+#%pip install numpy==1.19.1
 
 # COMMAND ----------
 
