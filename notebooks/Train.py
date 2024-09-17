@@ -586,8 +586,8 @@ for key, value in Country_dict.items():
         taskmetrics=taskmetrics,
         stagemetrics=stagemetrics,
         tracking_env=env,
-        horizon=horizon,
-        frequency=frequency,
+        # horizon=horizon,
+        #frequency=frequency,
         example_input=value['example_input'],
         #signature= Country .get("signature", None),
         # register_in_feature_store=True,  # Uncomment if needed
