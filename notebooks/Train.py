@@ -11,6 +11,7 @@
 # MAGIC %pip install azure-storage-blob
 # MAGIC %pip install azure-identity
 # MAGIC %pip install protobuf==3.17.2
+# MAGIC #%pip install numpy==1.19.1
 
 # COMMAND ----------
 
@@ -39,7 +40,7 @@ try:
     print("Loaded config from dbutils")
 except Exception as e:
     print(e)
-    with open('../data_config/SolutionConfig.yaml', 'r') as solution_config:
+    with open('../data_config/SolutionConfig_dev.yaml', 'r') as solution_config:
         solution_config = yaml.safe_load(solution_config)  
 
 # COMMAND ----------
@@ -359,7 +360,7 @@ def train_udf(df):
 # COMMAND ----------
 
 #df = final_df.limit(1000)
-output_df = final_df_pandas.groupBy("Country").applyInPandas(
+output_df = final_df_pandas.groupby("Country").applyInPandas(
     train_udf,
     schema=result_schema
 )
@@ -561,7 +562,7 @@ for key, value in Country_dict.items():
         dbutils=dbutils,
         spark=spark,
         model=model,
-        model_name=f"{model_name}_{key}_model_1907_1",
+        model_name=f"{model_name}_{key}_model_1709_1",
         model_runtime_env="python",
         train_metrics=commodity_dict[key]['train_metrics'],
         test_metrics=commodity_dict[key]['test_metrics'],
