@@ -290,7 +290,7 @@ countries = ['USA', 'Canada', 'India', 'Brazil']
 
 # COMMAND ----------
 
-data['Country'] = np.random.choice(countries, size=len(df))
+data['Country'] = np.random.choice(countries, size=len(data))
 
 # COMMAND ----------
 

@@ -1,8 +1,4 @@
 # Databricks notebook source
-
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## INSTALL MLCORE SDK
 
@@ -203,7 +199,7 @@ if date_filters and date_filters['ground_truth_table_date_filters'] and date_fil
 # COMMAND ----------
 
 ground_truth_data = gt_data.select([input_table_configs["input_2"]["primary_keys"]] + target_columns)
-features_data = ft_data.select([input_table_configs["input_1"]["primary_keys"]] + feature_columns)
+features_data = ft_data.select([input_table_configs["input_1"]["primary_keys"]] + feature_columns + ['country'])
 
 # COMMAND ----------
 
@@ -231,164 +227,6 @@ final_df_pandas.shape
 
 # COMMAND ----------
 
-# DBTITLE 1,Spliting the Final df to test and train dfs
-# Split the Data to Train and Test
-X_train, X_test, y_train, y_test = train_test_split(final_df_pandas[feature_columns], final_df_pandas[target_columns], test_size=test_size, random_state = 0)
-
-# COMMAND ----------
-
-from MLCORE_SDK.helpers.mlc_helper import get_job_id_run_id
-job_id, run_id, task_run_id = get_job_id_run_id(dbutils)
-print(job_id, run_id, task_run_id)
-report_directory = f'{tracking_env}/media_artifacts/2a3b88f5bb6444b0a19e23e4ef21495a/Solution_configs_upgrades/{job_id}/{run_id}/Tuning_Trails'
-
-# COMMAND ----------
-
-try :
-    if is_retrain:
-        hyperparameters = retrain_params.get("hyperparameters", {})
-        print(f"Retraining model with hyper parameters: {hyperparameters}")
-        hp_tuning_result = {}
-    else:
-        hp_tuning_result = dbutils.notebook.run(
-            "Hyperparameter_Tuning", 
-            timeout_seconds=0,
-            arguments={
-                "job_id": job_id,
-                "run_id" : run_id
-            })
-        hyperparameters = json.loads(hp_tuning_result)["best_hyperparameters"]
-        report_path = json.loads(hp_tuning_result)["report_path"]
-        print(f"Training Hyperparameters: {hyperparameters}")
-        print(f"Report path: {report_path}")
-except Exception as e:
-    print(e)
-    print("Using default hyper parameters")
-    hyperparameters = {}
-    hp_tuning_result = {}
-
-# COMMAND ----------
-
-
-from sklearn.linear_model import LinearRegression
-from sklearn.pipeline import Pipeline
-
-if not hyperparameters or hyperparameters == {}:
-    model = LinearRegression()
-    print("Using model with default hyper parameters")
-else:
-    model = LinearRegression(**hyperparameters)
-    print("Using model with custom hyper parameters")
-
-# Build a Scikit learn pipeline
-pipe = Pipeline([
-    ('regressor', model)
-])
-X_train_np = X_train.to_numpy()
-X_test_np = X_test.to_numpy()
-first_row_dict = X_train[:5].to_numpy()
-
-# COMMAND ----------
-
-# DBTITLE 1,Fitting the pipeline on Train data 
-# Fit the pipeline
-lr = pipe.fit(X_train_np, y_train)
-
-# COMMAND ----------
-
-# DBTITLE 1,Calculating the test metrics from the model
-# Predict it on Test and calculate metrics
-y_pred = lr.predict(X_test_np)
-mae = mean_absolute_error(y_test, y_pred)
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-rmse = mean_squared_error(y_test, y_pred,squared = False)
-
-# COMMAND ----------
-
-# DBTITLE 1,Displaying the test metrics 
-test_metrics = {"mae":mae, "mse":mse, "r2":r2,"rmse":rmse}
-test_metrics
-
-# COMMAND ----------
-
-# Predict it on Test and calculate metrics
-y_pred_train = lr.predict(X_train_np)
-mae = mean_absolute_error(y_train, y_pred_train)
-mse = mean_squared_error(y_train, y_pred_train)
-r2 = r2_score(y_train, y_pred_train)
-rmse = mean_squared_error(y_train, y_pred_train,squared = False)
-
-# COMMAND ----------
-
-train_metrics = {"mae":mae, "mse":mse, "r2":r2,"rmse":rmse}
-train_metrics
-
-# COMMAND ----------
-
-# DBTITLE 1,Join the X and y to single df
-pred_train = pd.concat([X_train, y_train], axis = 1)
-pred_test = pd.concat([X_test, y_test], axis = 1)
-
-# COMMAND ----------
-
-# DBTITLE 1,Getting train and test predictions from the model
-# Get prediction columns
-y_pred_train = lr.predict(X_train_np)
-y_pred = lr.predict(X_test_np)
-
-# COMMAND ----------
-
-pred_train["prediction"] = y_pred_train
-pred_train["dataset_type_71E4E76EB8C12230B6F51EA2214BD5FE"] = "train"
-
-pred_test["prediction"] = y_pred
-pred_test["dataset_type_71E4E76EB8C12230B6F51EA2214BD5FE"] = "test"
-
-# COMMAND ----------
-
-final_train_output_df = pd.concat([pred_train, pred_test])
-train_output_df = spark.createDataFrame(final_train_output_df)
-
-# COMMAND ----------
-
-from mlflow.tracking import MlflowClient
-def get_latest_model_version(model_configs):
-    try : 
-        mlflow_uri = model_configs.get("model_registry_params").get("host_url")
-        model_name = model_configs.get("model_params").get("model_name")
-        mlflow.set_registry_uri(mlflow_uri)
-        client = MlflowClient()
-        x = client.get_latest_versions(model_name)
-        model_version = x[0].version
-        return model_version
-    except Exception as e :
-        print(f"Exception in {get_latest_model_version} : {e}")
-        return 0
-
-# COMMAND ----------
-
-model_version = get_latest_model_version(model_configs) + 1
-train_output_df.withColumn("model_name", F.lit(model_name))
-train_output_df.withColumn("model_version", F.lit(model_version))
-train_output_df.withColumn("train_job_id", F.lit(job_id))
-train_output_df.withColumn("train_run_id", F.lit(run_id))
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## SAVE PREDICTIONS TO HIVE
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-from datetime import datetime
-from pyspark.sql import functions as F
-from pyspark.sql.window import Window
-
 def to_date_(col):
     """
     Checks col row-wise and returns first date format which returns non-null output for the respective column value
@@ -410,80 +248,169 @@ def to_date_(col):
 
 # COMMAND ----------
 
-# DBTITLE 1,Adding Timestamp and Date Features to a Source 1
-now = datetime.now()
-date = now.strftime("%m-%d-%Y")
-train_output_df = train_output_df.withColumn(
-    "timestamp",
-    F.expr("reflect('java.lang.System', 'currentTimeMillis')").cast("long"),
-)
-train_output_df = train_output_df.withColumn("date", F.lit(date))
-train_output_df = train_output_df.withColumn("date", to_date_(F.col("date")))
+def add_date_timestamp_id_columns(spark_df):
+    """Add timestamp, date, and id columns to the Spark DataFrame."""
+    now = datetime.now()
+    date = now.strftime("%m-%d-%Y")
+    spark_df = spark_df.withColumn("timestamp", F.expr("reflect('java.lang.System', 'currentTimeMillis')").cast("long"))
+    spark_df = spark_df.withColumn("date", F.lit(date))
+    spark_df = spark_df.withColumn("date", to_date_(F.col("date")))
+    
+    # Add a monotonically increasing column if not present
+    if "id" not in spark_df.columns:
+        window = Window.orderBy(F.monotonically_increasing_id())
+        spark_df = spark_df.withColumn("id", F.row_number().over(window))
 
-# ADD A MONOTONICALLY INREASING COLUMN
-if "id" not in train_output_df.columns : 
-  window = Window.orderBy(F.monotonically_increasing_id())
-  train_output_df = train_output_df.withColumn("id", F.row_number().over(window))
+    return spark_df
 
 # COMMAND ----------
 
+def calculate_metrics(y_true, y_pred):
+    """Calculate regression metrics."""
+    r2 = r2_score(y_true, y_pred)
+    mse = mean_squared_error(y_true, y_pred)
+    mae = mean_absolute_error(y_true, y_pred)
+    rmse = mean_squared_error(y_true, y_pred, squared=False)
+    return {"r2": r2, "mse": mse, "mae": mae, "rmse": rmse}
+
+# COMMAND ----------
+
+# DBTITLE 1,UDF
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from pyspark.sql.types import *
+from pyspark.sql.functions import col
+import pickle
+import base64
+
+# Define the schema for the output DataFrame
+result_schema = StructType([
+    StructField("country", StringType(), True),
+    StructField("output_df", StringType(), True),  # JSON string of the output DataFrame
+    StructField("model", StringType(), True),  # Serialized model string
+    StructField("train_metrics", StringType(), True),
+    StructField("test_metrics", StringType(), True),
+    StructField("example_input", StringType(), True)
+])
+
+def train_udf(df):
+    
+
+    X = df[feature_columns]  # feature (time in numeric form)
+    y = df['price']  # target (price)
+
+    train_size = int(len(df) * 0.8)
+    X_train, X_test = X.iloc[:train_size], X.iloc[train_size:]
+    y_train, y_test = y.iloc[:train_size], y.iloc[train_size:]
+
+    # Fit the Linear Regression model
+    lin_reg_model = LinearRegression()
+    lin_reg_model.fit(X_train, y_train)
+
+    example_input = X_train[:5].to_json(orient='records')
+
+    # Make predictions
+    y_pred_train = lin_reg_model.predict(X_train).tolist()
+    y_pred_test = lin_reg_model.predict(X_test).tolist()
+
+    # Calculate metrics
+    train_metrics = calculate_metrics(y_train, y_pred_train)
+    test_metrics = calculate_metrics(y_test, y_pred_test)
+
+    # Create DataFrames for train and test with predictions
+    train_df = X_train.copy()
+    test_df = X_test.copy()
+    train_df["y"] = y_train
+    test_df["y"] = y_test
+    train_df["prediction"] = y_pred_train
+    test_df["prediction"] = y_pred_test
+
+    train_df["dataset_type_71E4E76EB8C12230B6F51EA2214BD5FE"] = "train"
+    test_df["dataset_type_71E4E76EB8C12230B6F51EA2214BD5FE"] = "test"
+
+    # Concatenate the DataFrames vertically
+    output_df = pd.concat([train_df, test_df], ignore_index=True)
+
+    # Rename the columns back to original
+    output_df = output_df.rename(columns={'ds_numeric': 'epoch', 'y': 'price'})
+
+    # Serialize the model
+    serialized_model = base64.b64encode(pickle.dumps(lin_reg_model)).decode('utf-8')
+    
+    # Convert the DataFrame to a JSON string
+    output_json_str = output_df.to_json(orient='records', date_format='iso')
+    country = df["country"].iloc[0] if 'country' in df.columns else "Unknown"
+    
+    # Create a DataFrame with a single row containing the JSON string and the serialized model
+    result_df = pd.DataFrame(
+        {
+            "country": [country],
+            "output_df": [output_json_str],
+            "model": [serialized_model],
+            "train_metrics": [json.dumps(train_metrics)],
+            "test_metrics": [json.dumps(test_metrics)],
+            "example_input": [example_input]
+        }
+    )
+    
+    return result_df
+
+
+# COMMAND ----------
+
+#df = final_df.limit(1000)
+output_df = final_df_pandas.groupBy("country").applyInPandas(
+    train_udf,
+    schema=result_schema
+)
+
+# COMMAND ----------
+
+pandas_df = output_df.toPandas()
+
+# COMMAND ----------
+
+pandas_df
+
+# COMMAND ----------
+
+import json
+import pickle
+import base64
+
+# Initialize the dictionary to store the results
+country_dict = {}
+
+for index, row in pandas_df.iterrows():
+    country = row['country']
+    output_df_list = json.loads(row['output_df'])
+    model_bytes = base64.b64decode(row['model'])
+    model = pickle.loads(model_bytes)
+    
+    # Add the data to the dictionary
+    country_dict[country] = {
+        'output_df': output_df_list,
+        'model': model,
+        'train_metrics': json.loads(row['train_metrics']),
+        'test_metrics': json.loads(row['test_metrics']),
+        'example_input': json.loads(row['example_input'])
+    }
+
+
+print(country_dict)
+
+
+# COMMAND ----------
+
+model_name=model_configs.get('model_params', {}).get('model_name', '')
+model_name
+
+# COMMAND ----------
+
+# DBTITLE 1,Displaying the test metrics 
 db_name = output_table_configs["output_1"]["schema"]
-table_name = output_table_configs["output_1"]["table"]
 catalog_name = output_table_configs["output_1"]["catalog_name"]
 output_path = output_table_paths["output_1"]
-
-# Get the catalog name from the table name
-if catalog_name and catalog_name.lower() != "none":
-  spark.sql(f"USE CATALOG {catalog_name}")
-
-
-# Create the database if it does not exist
-spark.sql(f"CREATE DATABASE IF NOT EXISTS {db_name}")
-print(f"HIVE METASTORE DATABASE NAME : {db_name}")
-
-train_output_df.createOrReplaceTempView(table_name)
-
-feature_table_exist = [True for table_data in spark.catalog.listTables(db_name) if table_data.name.lower() == table_name.lower() and not table_data.isTemporary]
-
-if not any(feature_table_exist):
-  print(f"CREATING SOURCE TABLE")
-  spark.sql(f"CREATE TABLE IF NOT EXISTS {output_path} AS SELECT * FROM {table_name}")
-else :
-  print(F"UPDATING SOURCE TABLE")
-  spark.sql(f"INSERT INTO {output_path} SELECT * FROM {table_name}")
-
-if catalog_name and catalog_name.lower() != "none":
-  output_1_table_path = output_path
-else:
-  output_1_table_path = spark.sql(f"desc formatted {output_path}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
-
-print(f"Features Hive Path : {output_1_table_path}")
-
-# COMMAND ----------
-
-if input_table_configs["input_1"]["catalog_name"]:
-    feature_table_path = input_table_paths["input_1"]
-else:
-    feature_table_path = spark.sql(f"desc formatted {input_table_paths['input_1']}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
-
-if input_table_configs["input_2"]["catalog_name"]:
-    gt_table_path = input_table_paths["input_2"]
-gt_table_path = spark.sql(f"desc formatted {input_table_paths['input_2']}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
-
-print(feature_table_path, gt_table_path)
-
-# COMMAND ----------
-
-stagemetrics.end()
-taskmetrics.end()
-
-stage_Df = stagemetrics.create_stagemetrics_DF("PerfStageMetrics")
-task_Df = taskmetrics.create_taskmetrics_DF("PerfTaskMetrics")
-
-compute_metrics = stagemetrics.aggregate_stagemetrics_DF().select("executorCpuTime", "peakExecutionMemory","memoryBytesSpilled","diskBytesSpilled").collect()[0].asDict()
-
-compute_metrics['executorCpuTime'] = compute_metrics['executorCpuTime']/1000
-compute_metrics['peakExecutionMemory'] = float(compute_metrics['peakExecutionMemory']) /(1024*1024)
 
 # COMMAND ----------
 
@@ -500,11 +427,22 @@ train_data_date_dict = {
 
 # COMMAND ----------
 
-model_name=model_configs.get('model_params', {}).get('model_name', '')
+if input_table_configs["input_1"]["catalog_name"]:
+    feature_table_path = input_table_paths["input_1"]
+else:
+    feature_table_path = spark.sql(f"desc formatted {input_table_paths['input_1']}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
+
+if input_table_configs["input_2"]["catalog_name"]:
+    gt_table_path = input_table_paths["input_2"]
+else:
+    gt_table_path = spark.sql(f"desc formatted {input_table_paths['input_2']}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
+
+
+print(feature_table_path, gt_table_path)
 
 # COMMAND ----------
 
-# Calling job run add for DPD job runs
+# Add job_run_add method for 1st model
 mlclient.log(
     operation_type="job_run_add", 
     session_id = sdk_session_id, 
@@ -513,139 +451,21 @@ mlclient.log(
     job_config = 
     {
         "table_name" : output_table_configs["output_1"]["table"],
-        "table_type" : "Source",
-        "model_name" : model_name,
+        "model_name" : f"{model_name}_Palladium",
         "feature_table_path" : feature_table_path,
         "ground_truth_table_path" : gt_table_path,
         "feature_columns" : feature_columns,
         "target_columns" : target_columns,
-        "model" : lr,
+        "model" : model_name,
         "model_runtime_env" : "python",
         "reuse_train_session" : False
     },
     tracking_env = env,
+    tracking_url = tracking_url,
     spark = spark,
     verbose = True,
     )
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC
-# MAGIC ## REGISTER MODEL IN MLCORE
-
-# COMMAND ----------
-
-print(hp_tuning_result)
-
-# COMMAND ----------
-
-from MLCORE_SDK import mlclient
-
-# COMMAND ----------
-
-# DBTITLE 1,Registering the model in MLCore
-model_artifact_id = mlclient.log(operation_type = "register_model",
-    sdk_session_id = sdk_session_id,
-    dbutils = dbutils,
-    spark = spark,
-    model = lr,
-    model_name = model_name,
-    model_runtime_env = "python",
-    train_metrics = train_metrics,
-    test_metrics = test_metrics,
-    feature_table_path = feature_table_path,
-    ground_truth_table_path = gt_table_path,
-    train_output_path = output_1_table_path,
-    train_output_rows = train_output_df.count(),
-    train_output_cols = train_output_df.columns,
-    table_schema=train_output_df.schema,
-    column_datatype = train_output_df.dtypes,
-    feature_columns = feature_columns,
-    target_columns = target_columns,
-    table_type="unitycatalog" if output_table_configs["output_1"]["catalog_name"] else "internal",
-    train_data_date_dict = train_data_date_dict,
-    hp_tuning_result=hp_tuning_result,
-    compute_usage_metrics = compute_metrics,
-    taskmetrics = taskmetrics,
-    stagemetrics = stagemetrics,
-    tracking_env = env,
-    model_configs = model_configs,
-    example_input = first_row_dict,
-    model_documentation_url="/Workspace/Repos/ayushi.yadav2@tigeranalytics.com/car_price_prediction_repov3/notebooks/model_documentation.md",
-    verbose = True)
-
-# COMMAND ----------
-
-if not model_artifact_id :
-    dbutils.notebook.exit("Model is not registered successfully hence skipping the saving of tuning trials plots.")
-
-# COMMAND ----------
-
-# DBTITLE 1,Aggregated Train Output Table
-db_name = output_table_configs["output_1"]["schema"]
-aggregated_table_name = f"{sdk_session_id}_train_output_aggregated_table"
-catalog_name = output_table_configs["output_1"]["catalog_name"]
-if catalog_name and catalog_name.lower() != "none":
-    output_path = f"{catalog_name}.{db_name}.{aggregated_table_name}"
-else :
-    output_path = f"{db_name}.{aggregated_table_name}"
-
-# Add Model Artifact ID retrieved after registering the model.
-train_output_df = train_output_df.withColumn("model_artifact_id", F.lit(model_artifact_id))
-
-# Get the catalog name from the table name
-if catalog_name and catalog_name.lower() != "none":
-  spark.sql(f"USE CATALOG {catalog_name}")
-
-# Create the database if it does not exist
-spark.sql(f"CREATE DATABASE IF NOT EXISTS {db_name}")
-print(f"HIVE METASTORE DATABASE NAME : {db_name}")
-
-train_table_exists = [True for table_data in spark.catalog.listTables(db_name) if table_data.name.lower() == aggregated_table_name.lower() and not table_data.isTemporary]
-
-# IF the table exists, reset the ID based on existing max marker
-if any(train_table_exists):
-    max_id_value = spark.sql(f"SELECT max(id) FROM {output_path}").collect()[0][0]
-    window = Window.orderBy(F.monotonically_increasing_id())
-    train_output_df = train_output_df.withColumn("id", F.row_number().over(window) + max_id_value)
-
-# Create temporary View.
-train_output_df.createOrReplaceTempView(aggregated_table_name)
-
-if not any(train_table_exists):
-  print(f"CREATING SOURCE TABLE")
-  spark.sql(f"CREATE TABLE IF NOT EXISTS {output_path} PARTITIONED BY (model_artifact_id) AS SELECT * FROM {aggregated_table_name}")
-else :
-  print(F"UPDATING SOURCE TABLE")
-  spark.sql(f"INSERT INTO {output_path} PARTITION (model_artifact_id) SELECT * FROM {aggregated_table_name}")
-
-if catalog_name and catalog_name.lower() != "none":
-  aggregated_table_path = output_path
-else:
-  aggregated_table_path = spark.sql(f"desc formatted {output_path}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
-
-print(f"Aggregated Train Output Hive Path : {aggregated_table_path}")
-
-# COMMAND ----------
-
-# Register Aggregate Train Output in MLCore
-mlclient.log(operation_type = "register_table",
-    sdk_session_id = sdk_session_id,
-    dbutils = dbutils,
-    spark = spark,
-    table_name = aggregated_table_name,
-    num_rows = train_output_df.count(),
-    tracking_env = env,
-    cols = train_output_df.columns,
-    column_datatype = train_output_df.dtypes,
-    table_schema = train_output_df.schema,
-    primary_keys = ["id"],
-    table_path = aggregated_table_path,
-    table_type="unitycatalog" if output_table_configs["output_1"]["catalog_name"] else "internal",
-    table_sub_type="Train_Output",
-    platform_table_type = "Aggregated_train_output",
-    verbose=True,)
 
 # COMMAND ----------
 
@@ -663,53 +483,181 @@ print(project_id, version)
 
 # COMMAND ----------
 
-if not is_retrain:    
-    try:
-        print(model_artifact_id)
-        if storage_configs["cloud_provider"] == "databricks_uc":
-            params = storage_configs.get("params",{})
-            catalog_name=params.get("catalog_name","")
-            schema_name = params.get("schema_name","")
-            volume_name = params.get("volume_name","")
+from sparkmeasure import StageMetrics, TaskMetrics
 
-            artifact_path_uc_volume = f"/Volumes/{catalog_name}/{schema_name}/{volume_name}/{tracking_env}/media_artifacts/{project_id}/{version}/{job_id}/{run_id}"
-            print(artifact_path_uc_volume)
-            mlclient.log(
-                operation_type = "upload_blob_to_cloud",
-                blob_path=report_path,
-                dbutils = dbutils ,
-                target_path = f"{artifact_path_uc_volume}/Model_Evaluation/Tuning_Trails_report_{int(time.time())}.png",
-                resource_type = "databricks_uc",
-                project_id = project_id,
-                version = version,
-                job_id = job_id,
-                run_id = run_id,
-                model_artifact_id = model_artifact_id,
-                request_type = "Model_Evaluation",
-                storage_configs = storage_configs,
-                api_endpoint=tracking_url,
-                tracking_env = tracking_env,
-                verbose=True)
-        else :
-            report_directory = f"{tracking_env}/media_artifacts/{project_id}/{version}/{job_id}/{run_id}"
-            print(report_directory)
-            container_name = storage_configs.get("container_name")
-            mlclient.log(
-                operation_type = "upload_blob_to_cloud",
-                source_path=report_path,
-                dbutils = dbutils ,
-                target_path = f"{report_directory}/Model_Evaluation/Tuning_Trails_report_{int(time.time())}.png",
-                resource_type = "az",
-                project_id = project_id,
-                version = version,
-                job_id = job_id,
-                run_id = run_id,
-                model_artifact_id = model_artifact_id,
-                request_type = "Model_Evaluation",
-                storage_configs = storage_configs,
-                api_endpoint=tracking_url,
-                tracking_env = tracking_env,
-                verbose=True)
-    except Exception as err:
-        print(Exception, err)
-        
+# COMMAND ----------
+
+from mlflow.tracking import MlflowClient
+def get_latest_model_version(model_configs):
+    try : 
+        mlflow_uri = model_configs.get("model_registry_params").get("host_url")
+        model_name = model_configs.get("model_params").get("model_name")
+        mlflow.set_registry_uri(mlflow_uri)
+        client = MlflowClient()
+        x = client.get_latest_versions(model_name)
+        model_version = x[0].version
+        return model_version
+    except Exception as e :
+        print(f"Exception in {get_latest_model_version} : {e}")
+        return 0
+
+# COMMAND ----------
+
+
+for key, value in country_dict.items():
+
+    #start tastmetrics and stage metrics
+    taskmetrics = TaskMetrics(spark)
+    stagemetrics = StageMetrics(spark)
+    taskmetrics.begin()
+    stagemetrics.begin()
+
+    #1. Write the train_output_tables to HIVE
+    country=key
+    table_name = f"{model_name}_{country}_train_output_forecasting"
+    if catalog_name and catalog_name.lower() != "none":
+        spark.sql(f"USE CATALOG {catalog_name}")
+
+    # Create the database if it does not exist
+    spark.sql(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+    print(f"HIVE METASTORE DATABASE NAME : {db_name}")
+    
+    output_df=value['output_df']
+    train_output_df=pd.DataFrame(output_df)
+    train_output_df = spark.createDataFrame(train_output_df)
+    train_output_df.createOrReplaceTempView(table_name)
+    feature_table_exist = [True for table_data in spark.catalog.listTables(db_name) if table_data.name.lower() == table_name.lower() and not table_data.isTemporary]
+
+    output_path = f"{db_name}.{table_name}"
+    if not any(feature_table_exist):
+        print(f"CREATING SOURCE TABLE")
+        spark.sql(f"CREATE TABLE IF NOT EXISTS {output_path} AS SELECT * FROM {table_name}")
+    else :
+        print(F"UPDATING SOURCE TABLE")
+        spark.sql(f"INSERT INTO {output_path} SELECT * FROM {table_name}")
+
+    output_1_table_path = output_path
+    
+
+    print(f"Features Hive Path : {output_1_table_path}")
+
+
+
+    #end tastmetrics and stage metrics
+    stagemetrics.end()
+    taskmetrics.end()
+    stage_Df = stagemetrics.create_stagemetrics_DF("PerfStageMetrics")
+    task_Df = taskmetrics.create_taskmetrics_DF("PerfTaskMetrics")
+    compute_metrics = stagemetrics.aggregate_stagemetrics_DF().select("executorCpuTime", "peakExecutionMemory","memoryBytesSpilled","diskBytesSpilled").collect()[0].asDict()
+    compute_metrics['executorCpuTime'] = compute_metrics['executorCpuTime']/1000
+    compute_metrics['peakExecutionMemory'] = float(compute_metrics['peakExecutionMemory']) /(1024*1024)
+    
+
+    #2. Register model in MLCORE
+    mlflow.end_run()
+    model_artifact_id=mlclient.log(
+        operation_type="register_model",
+        sdk_session_id=sdk_session_id,
+        dbutils=dbutils,
+        spark=spark,
+        model=model,
+        model_name=f"{model_name}_{key}_model_1907_1",
+        model_runtime_env="python",
+        train_metrics=commodity_dict[key]['train_metrics'],
+        test_metrics=commodity_dict[key]['test_metrics'],
+        feature_table_path=feature_table_path,  # Adjust this line if feature_table_path is specific to each commodity
+        ground_truth_table_path=gt_table_path,
+        train_output_path=output_1_table_path,
+        train_output_rows=train_output_df.count(),
+        train_output_cols=train_output_df.columns,
+        table_schema=train_output_df.schema,
+        column_datatype=train_output_df.dtypes,
+        feature_columns=feature_columns,
+        target_columns=target_columns,
+        table_type="unitycatalog" if output_table_configs["output_1"]["catalog_name"] else "internal",
+        train_data_date_dict=train_data_date_dict,  
+        compute_usage_metrics=compute_metrics,
+        taskmetrics=taskmetrics,
+        stagemetrics=stagemetrics,
+        tracking_env=env,
+        horizon=horizon,
+        frequency=frequency,
+        example_input=value['example_input'],
+        #signature= commodity.get("signature", None),
+        # register_in_feature_store=True,  # Uncomment if needed
+        model_configs=model_configs,
+        tracking_url=tracking_url,
+        verbose=True
+
+    )
+    commodity_dict[key]['model_artifact_id']=model_artifact_id
+
+#     model_version = get_latest_model_version(model_configs) + 1
+#     train_output_df = train_output_df.withColumn("model_name", F.lit(model_name).cast("string"))
+#     train_output_df = train_output_df.withColumn("model_version", F.lit(model_version).cast("string"))
+#     train_output_df = train_output_df.withColumn("train_job_id", F.lit(job_id).cast("string"))
+#     train_output_df = train_output_df.withColumn("train_run_id", F.lit(run_id).cast("string"))
+#     train_output_df = train_output_df.withColumn("train_task_id",F.lit(task_id).cast("string"))
+
+
+
+#     aggregated_table_name = f"{sdk_session_id}_{key}_train_output_aggregated_table"
+#     catalog_name = output_table_configs["output_1"]["catalog_name"]
+#     if catalog_name and catalog_name.lower() != "none":
+#         output_path = f"{catalog_name}.{db_name}.{aggregated_table_name}"
+#     else :
+#         output_path = f"{db_name}.{aggregated_table_name}"
+
+# # Add Model Artifact ID retrieved after registering the model.
+#         train_output_df = train_output_df.withColumn("model_artifact_id", F.lit(model_artifact_id))
+
+# # Get the catalog name from the table name
+#     if catalog_name and catalog_name.lower() != "none":
+#         spark.sql(f"USE CATALOG {catalog_name}")
+
+# # Create the database if it does not exist
+#     spark.sql(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+#         print(f"HIVE METASTORE DATABASE NAME : {db_name}")
+
+# train_table_exists = [True for table_data in spark.catalog.listTables(db_name) if table_data.name.lower() == aggregated_table_name.lower() and not table_data.isTemporary]
+
+# # IF the table exists, reset the ID based on existing max marker
+# if any(train_table_exists):
+#     max_id_value = spark.sql(f"SELECT max(id) FROM {output_path}").collect()[0][0]
+#     window = Window.orderBy(F.monotonically_increasing_id())
+#     train_output_df = train_output_df.withColumn("id", F.row_number().over(window) + max_id_value)
+
+# # Create temporary View.
+# train_output_df.createOrReplaceTempView(aggregated_table_name)
+
+# if not any(train_table_exists):
+#   print(f"CREATING SOURCE TABLE")
+#   spark.sql(f"CREATE TABLE IF NOT EXISTS {output_path} PARTITIONED BY (model_artifact_id) AS SELECT * FROM {aggregated_table_name}")
+# else :
+#   print(F"UPDATING SOURCE TABLE")
+#   spark.sql(f"INSERT INTO {output_path} PARTITION (model_artifact_id) SELECT * FROM {aggregated_table_name}")
+
+# aggregated_table_path = output_path
+
+# print(f"Aggregated Train Output Hive Path : {aggregated_table_path}")
+
+
+#     # Register Aggregate Train Output in MLCore
+#     mlclient.log(operation_type = "register_table",
+#     sdk_session_id = sdk_session_id,
+#     dbutils = dbutils,
+#     spark = spark,
+#     table_name = aggregated_table_name,
+#     num_rows = train_output_df.count(),
+#     tracking_env = tracking_env,
+#     cols = train_output_df.columns,
+#     column_datatype = train_output_df.dtypes,
+#     table_schema = train_output_df.schema,
+#     primary_keys = ["id"],
+#     table_path = aggregated_table_path,
+#     table_type="unitycatalog" if output_table_configs["output_1"]["catalog_name"] else "internal",
+#     table_sub_type="Train_Output",
+#     tracking_url = tracking_url,
+#     platform_table_type = "Aggregated_train_output",
+#     verbose=True)
+
