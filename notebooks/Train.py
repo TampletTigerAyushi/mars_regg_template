@@ -34,6 +34,7 @@ stagemetrics.begin()
 import yaml
 import ast
 import pickle
+import mlflow
 from MLCORE_SDK import mlclient
 from pyspark.sql import functions as F
 import json
@@ -456,7 +457,7 @@ mlclient.log(
     job_config = 
     {
         "table_name" : output_table_configs["output_1"]["table"],
-        "model_name" : f"{model_name}_Palladium",
+        "model_name" : f"{model_name}_USA",
         "feature_table_path" : feature_table_path,
         "ground_truth_table_path" : gt_table_path,
         "feature_columns" : feature_columns,
@@ -519,7 +520,7 @@ for key, value in Country_dict.items():
 
     #1. Write the train_output_tables to HIVE
     Country=key
-    table_name = f"{model_name}_{Country}_train_output_forecasting"
+    table_name = f"{model_name}_{Country}_train_output"
     if catalog_name and catalog_name.lower() != "none":
         spark.sql(f"USE CATALOG {catalog_name}")
 
