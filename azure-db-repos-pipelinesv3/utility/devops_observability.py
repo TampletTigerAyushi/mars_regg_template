@@ -32,7 +32,7 @@ model_approval_id =  sys.argv[22]
 model_artifact_id  = sys.argv[23]
 
 
-if ENV == "qa":
+if ENV == "uat":
     DATABRICKS_REPO_FOLDER_NAME = f"{DATABRICKS_REPO_FOLDER_NAME}_QA"
     
 DEVOPS_ORG_NAME = DEVOPS_ORG_URL.split("/")[-2]
@@ -141,26 +141,6 @@ def register_ext_metajob(API_BASE_URL,PAYLOAD,Header):
         print(e)
 
 #print(job_ids)
-
-def get_target_params():
-    yaml_file_path = "data_config/SolutionConfig.yaml"
-    with open(yaml_file_path, 'r') as file:
-        yaml_content = file.read()
-    config = yaml.safe_load(yaml_content)
-    tracking_env =  config.get("general_configs").get("tracking_env")
-    ENV = tracking_env
-    tracking_url = config.get("general_configs").get("tracking_url")
-    if tracking_url:
-        API_BASE_URL = tracking_url
-    else:
-        API_BASE_URL = os.environ.get(f"API_BASE_URL_{ENV.upper()}")
-    Target_CLIENT_ID =  os.environ.get(f"AZ_CLIENT_ID_{ENV.upper()}")
-    SESSION_ID = config.get("general_configs").get("sdk_session_id").get(f"{ENV}")
-    print(ENV, API_BASE_URL, Target_CLIENT_ID, SESSION_ID)
-    return ENV, API_BASE_URL, Target_CLIENT_ID, SESSION_ID
-
-
-ENV, API_BASE_URL, Target_CLIENT_ID , SESSION_ID = get_target_params()
 
 Header = get_headers(AZ_CLIENT_ID, AZ_CLIENT_SECRET, AZ_TENANT)
 

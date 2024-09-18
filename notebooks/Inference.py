@@ -113,10 +113,6 @@ output_table_paths = get_name_space(output_table_configs)
 
 # COMMAND ----------
 
-flag=0
-
-# COMMAND ----------
-
 # Table Exists or Not
 def table_already_created(catalog_name, db_name, table_name):
     if catalog_name:
@@ -135,18 +131,22 @@ def get_task_logger(catalog_name, db_name, table_name):
             return task_logger["start_marker"], task_logger["end_marker"]
     return 0, 0
 
-def get_the_batch_data(catalog_name, db_name, source_data_path, task_logger_table_name, batch_size):
+def get_the_batch_data(catalog_name, db_name, source_data_path, task_logger_table_name, batch_size, country=None):
     start_marker, end_marker = get_task_logger(catalog_name, db_name, task_logger_table_name)
-    query = f"SELECT * FROM {source_data_path} where Country = '{country}'"
-    #query based on the country and store in filtered df
-    #from that filtered df take the number of
+    query = f"SELECT * FROM {source_data_path}"
+    if country:
+        query += f" WHERE Country = '{country}'"
     if start_marker and end_marker:
-        query += f" WHERE {generate_filter_condition(start_marker, end_marker)}"
+        if "WHERE" in query:
+            query += f" AND {generate_filter_condition(start_marker, end_marker)}"
+        else:
+            query += f" WHERE {generate_filter_condition(start_marker, end_marker)}"    
     query += " ORDER BY id"
-    query += f" LIMIT {batch_size}"
+    query += f" LIMIT {batch_size}"    
     print(f"SQL QUERY  : {query}")
     filtered_df = spark.sql(query)
     return filtered_df, start_marker, end_marker
+
 
 def generate_filter_condition(start_marker, end_marker):
     filter_column = 'id'  # Replace with the actual column name
@@ -207,7 +207,7 @@ task_logger_table_name = f"{output_table_configs['output_1']['table']}_task_logg
 
 # COMMAND ----------
 
-transformed_features_df,start_marker,end_marker = get_the_batch_data(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"], input_table_paths['input_1'], task_logger_table_name, batch_size)
+transformed_features_df,start_marker,end_marker = get_the_batch_data(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"], input_table_paths['input_1'], task_logger_table_name, batch_size,country)
 
 gt_df,start_marker,end_marker = get_the_batch_data(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"], input_table_paths['input_2'], task_logger_table_name, batch_size)
 

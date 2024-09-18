@@ -13,7 +13,7 @@ resources:
           notebook_task:
             notebook_path: /notebooks/Train
             base_parameters:
-              env: dev
+              env: uat
 
       access_control_list:
         - group_name: MLCore_Services

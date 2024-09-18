@@ -1,7 +1,7 @@
 resources:
   jobs:
-    Wind_Turbine_0408_azure_v2_inference:
-      name: Wind_Turbine_0408_azure_v2_inference
+    car_insurance_claim_0609_v2_inference:
+      name: car_insurance_claim_0609_v2_inference
       type: Inference
       #is_deterministic: False
 
@@ -20,7 +20,7 @@ resources:
           notebook_task:
             notebook_path: /notebooks/Inference
             base_parameters:
-              env: dev
+              env: uat
       
       access_control_list:
         - group_name: MLCore_Services

@@ -112,12 +112,6 @@ def create_JSON(jobs_yaml_directory = "../../resources"):
     
     return payloads
 
-# add the tags for the jobs    
-def get_job_tags(job_config,project_name,repo_name,env):
-    job_type=job_config.get("type")
-    tags = {"project" : f"{project_name}" , "repo_name" : f"{repo_name}" ,"job_type" : f"{job_type}" , "workspace_env": f"{env}"}
-    return tags
-
 
 #print(create_JSON())
 current_directory = os.path.dirname(os.path.realpath(__file__))
@@ -220,16 +214,12 @@ for job in job_list:
         #task["libraries"] = libraries
 
         #Assign the job_cluster key (SHOULD BE ASSIGNED DYNAMICALLY IN FUTURE)
-        task["job_cluster_key"] = job_cluster_key
-        #task["existing_cluster_id"] = "0614-142133-xvsblpkr"
+        #task["job_cluster_key"] = job_cluster_key
+        task["existing_cluster_id"] = "0614-142133-xvsblpkr"
 
         #print(job_config_dict[job])
         
-    job_config = job_config_dict[job]
-    #calling the get_job_tags function to get the tags in job_config
-    tags=get_job_tags(job_config,project_name,project_name,env)
-    job_config["tags"] = tags
-    PAYLOAD= job_config
+    PAYLOAD = job_config_dict[job]
     print(PAYLOAD)
     
     try:

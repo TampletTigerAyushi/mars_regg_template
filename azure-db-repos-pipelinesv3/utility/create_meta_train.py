@@ -17,7 +17,7 @@ DATABRICKS_TOKEN = sys.argv[6]
 USER_GROUP = sys.argv[7]
 
 
-if ENV == "qa":
+if ENV == "uat":
     DATABRICKS_REPO_FOLDER_NAME = f"{DATABRICKS_REPO_FOLDER_NAME}_QA"
     
 DEVOPS_ORG_NAME = DEVOPS_ORG_URL.split("/")[-2]

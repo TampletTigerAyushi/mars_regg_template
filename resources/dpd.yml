@@ -1,9 +1,8 @@
 resources:
   jobs:
-    data_prep:           
-      name: data_prep
-      type: Feature_Engineering   
-      #is_deterministic: False
+    DPD_FT:
+      name: DPD_FT
+      type: Feature_Engineering 
 
       schedule:
         # Run every day at 8:37 AM
@@ -17,26 +16,43 @@ resources:
 
       tasks:
         - task_key: DPD_FT
+        
           notebook_task:
             notebook_path: /notebooks/FeaturePipeline_FT
             base_parameters:
-              env: dev 
+              env: uat 
               task: dpd
-          
 
-        - task_key: DPD_GT
-          notebook_task:
-            notebook_path: /notebooks/FeaturePipeline_GT
-            base_parameters:
-              env: dev 
-              task: dpd
-      
       access_control_list:
         - group_name: MLCore_Services
           permission_level: CAN_MANAGE
-          
-      
 
+    DPD_GT:
+      name: DPD_GT
+      type: Feature_Engineering 
+
+      schedule:
+        # Run every day at 8:37 AM
+        quartz_cron_expression: '0 0/2 * 1/1 * ? *'
+        timezone_id: Asia/Calcutta
+        pause_status: PAUSED
+
+      email_notifications:
+        on_failure:
+          - himanshu.bajpai@tigeranalytics.com
+
+      tasks:
+        - task_key: DPD_GT
+
+          notebook_task:
+            notebook_path: /notebooks/FeaturePipeline_GT
+            base_parameters:
+              env: uat
+              task: dpd
+
+      access_control_list:
+        - group_name: MLCore_Services
+          permission_level: CAN_MANAGE
         
 
 

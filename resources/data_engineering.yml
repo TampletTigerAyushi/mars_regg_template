@@ -19,7 +19,7 @@ resources:
           notebook_task:
             notebook_path: /notebooks/DataEngineering_FT
             base_parameters:
-              env: dev 
+              env: uat 
               task: de
 
       access_control_list:
@@ -45,7 +45,7 @@ resources:
           notebook_task:
             notebook_path: /notebooks/DataEngineering_GT
             base_parameters:
-              env: dev 
+              env: uat 
               task: de
       
       access_control_list:

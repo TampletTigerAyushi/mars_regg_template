@@ -14,7 +14,7 @@ resources:
           notebook_task:
             notebook_path: /notebooks/FeaturePipeline_FT
             base_parameters:
-              env: dev
+              env: uat
               task: fe
 
       access_control_list:
@@ -35,7 +35,7 @@ resources:
           notebook_task:
             notebook_path: /notebooks/FeaturePipeline_GT
             base_parameters:
-              env: dev 
+              env: uat 
               task: fe
       
       access_control_list:
