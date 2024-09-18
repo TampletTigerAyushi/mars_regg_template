@@ -1,7 +1,7 @@
 resources:
   jobs:
-    car_price_1109_azure_v2_inference:
-      name: car_price_1109_azure_v2_inference
+    car_price_1609_azure_v2_USA_model_1709_1_inference:
+      name: car_price_1609_azure_v2_USA_model_1709_1_inference
       type: Inference
       #is_deterministic: False
 
