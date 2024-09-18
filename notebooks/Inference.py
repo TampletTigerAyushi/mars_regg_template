@@ -75,7 +75,10 @@ feature_columns = solution_config['train']["feature_columns"]
 is_scheduled = solution_config["inference"]["is_scheduled"]
 batch_size = int(solution_config["inference"].get("batch_size",500))
 cron_job_schedule = solution_config["inference"].get("cron_job_schedule","0 */10 * ? * *")
-
+model_name = model_configs.get("model_params").get("model_name")
+parts = model_name.split('_')
+country = parts[4]
+print(f"Country : {country}")
 
 # COMMAND ----------
 
@@ -122,7 +125,9 @@ def get_task_logger(catalog_name, db_name, table_name):
 
 def get_the_batch_data(catalog_name, db_name, source_data_path, task_logger_table_name, batch_size):
     start_marker, end_marker = get_task_logger(catalog_name, db_name, task_logger_table_name)
-    query = f"SELECT * FROM {source_data_path}"
+    query = f"SELECT * FROM {source_data_path} where Country = '{country}'"
+    #query based on the country and store in filtered df
+    #from that filtered df take the number of
     if start_marker and end_marker:
         query += f" WHERE {generate_filter_condition(start_marker, end_marker)}"
     query += " ORDER BY id"
@@ -137,8 +142,8 @@ def generate_filter_condition(start_marker, end_marker):
 
 # Update Task Logger - Z-Ordered
 def update_task_logger(catalog_name, db_name, task_logger_table_name, end_marker, batch_size):
-    start_marker = end_marker + 1
-    end_marker = end_marker + batch_size
+    start_marker = min_id
+    end_marker = max_id
     print(f"start_marker : {start_marker}")
     print(f"end_marker : {end_marker}")
     # Determination of table name on which markers have been calculated
@@ -362,17 +367,34 @@ catalog_name = output_table_configs["output_1"]["catalog_name"]
 output_path = output_table_paths["output_1"]
 
 # Get the catalog name from the table name
-if catalog_name and catalog_name.lower() != "none":
+if catalog_name and catalog_name.lower() != "none": 
   spark.sql(f"USE CATALOG {catalog_name}")
-
+else:
+  spark.sql(f"USE CATALOG hive_metastore")
 
 # Create the database if it does not exist
 spark.sql(f"CREATE DATABASE IF NOT EXISTS {db_name}")
 print(f"HIVE METASTORE DATABASE NAME : {db_name}")
 
-output_table.createOrReplaceTempView(table_name)
-
 feature_table_exist = [True for table_data in spark.catalog.listTables(db_name) if table_data.name.lower() == table_name.lower() and not table_data.isTemporary]
+
+# Fetch the max ID from the existing table if it exists
+if any(feature_table_exist):
+    max_id_query = f"SELECT MAX(id) as max_id FROM {output_path}"
+    max_id = spark.sql(max_id_query).collect()[0]["max_id"]
+    print("max_id: ",max_id)
+    if max_id is None:
+        max_id = 0
+else:
+    max_id = 0
+
+# Add a monotonically increasing column starting from the previous max ID
+if "id" not in output_table.columns:
+    window = Window.orderBy(F.monotonically_increasing_id())
+    output_table = output_table.withColumn("id", F.row_number().over(window) + max_id)
+
+# Register the DataFrame as a temporary view
+output_table.createOrReplaceTempView(table_name)
 
 if not any(feature_table_exist):
   print(f"CREATING SOURCE TABLE")
@@ -380,11 +402,20 @@ if not any(feature_table_exist):
 else :
   print(F"UPDATING SOURCE TABLE")
   spark.sql(f"INSERT INTO {output_path} SELECT * FROM {table_name}")
-
-if catalog_name and catalog_name.lower() != "none":
-  output_1_table_path = output_path
+if max_id !=0:
+  min_id=max_id+1
 else:
-  output_1_table_path = spark.sql(f"desc formatted {output_path}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
+  min_id_query = f"SELECT MIN(id) as min_id FROM {output_path}"
+  min_id = spark.sql(min_id_query).collect()[0]["min_id"]
+  print("min_id: ",min_id)
+max_id_query = f"SELECT MAX(id) as max_id FROM {output_path}"
+max_id = spark.sql(max_id_query).collect()[0]["max_id"]
+print("max_id: ",max_id)
+if max_id is None:
+  max_id = 0
+
+
+output_1_table_path = output_path
 
 print(f"Features Hive Path : {output_1_table_path}")
 
@@ -416,26 +447,15 @@ compute_metrics['peakExecutionMemory'] = float(compute_metrics['peakExecutionMem
 
 # COMMAND ----------
 
-import time
-from datetime import datetime  
-from pyspark.sql.types import StructType, StructField, IntegerType,StringType
-df_task = update_task_logger(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"],task_logger_table_name,end_marker, batch_size)
-if catalog_name:
-    db_name=f"{catalog_name}.{db_name}"
-    logger_table_path=f"{db_name}.{task_logger_table_name}"
-    task_logger_table_path = logger_table_path
-    print(task_logger_table_name)
-    print(logger_table_path)
-    print(task_logger_table_path)
-else:
-    logger_table_path=f"{db_name}.{task_logger_table_name}"
-    print(task_logger_table_name)
-    print(spark.sql(f"desc formatted {logger_table_path}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0])
-    print(logger_table_path)
-    task_logger_table_path= spark.sql(f"desc formatted {logger_table_path}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
+df_task = update_task_logger(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"],task_logger_table_name, batch_size,max_id,min_id)
 
-start_marker = end_marker + 1
-end_marker = end_marker + batch_size
+logger_table_path=f"{catalog_name}.{db_name}.{task_logger_table_name}"
+if catalog_name and catalog_name.lower() != "none": 
+    task_logger_table_path = logger_table_path
+else:
+    task_logger_table_path = spark.sql(f"desc {logger_table_path}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
+start_marker = min_id
+end_marker = max_id
 
 # COMMAND ----------
 
