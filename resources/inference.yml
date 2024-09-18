@@ -1,7 +1,7 @@
 resources:
   jobs:
-    car_insurance_claim_0609_v2_inference:
-      name: car_insurance_claim_0609_v2_inference
+    car_price_1809_azure_v2_Brazil_model_1709_1_inference:
+      name: car_price_1809_azure_v2_Brazil_model_1709_1_inference
       type: Inference
       #is_deterministic: False
 
