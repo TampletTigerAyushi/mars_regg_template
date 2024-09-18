@@ -465,12 +465,11 @@ compute_metrics['peakExecutionMemory'] = float(compute_metrics['peakExecutionMem
 import time
 from datetime import datetime  
 from pyspark.sql.types import StructType, StructField, IntegerType,StringType
-if task.lower() != "fe":
-    df_task = update_task_logger(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"],task_logger_table_name,end_marker, batch_size)
-    if catalog_name:
-        db_name=f"{catalog_name}.{db_name}"
-    task_logger_table_path=f"{db_name}.{task_logger_table_name}"
-    print(task_logger_table_path)
+df_task = update_task_logger(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"],task_logger_table_name,end_marker, batch_size)
+if catalog_name:
+    db_name=f"{catalog_name}.{db_name}"
+task_logger_table_path=f"{db_name}.{task_logger_table_name}"
+print(task_logger_table_path)
 
 # COMMAND ----------
 
