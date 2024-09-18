@@ -147,15 +147,14 @@ def get_the_batch_data(catalog_name, db_name, source_data_path, task_logger_tabl
     filtered_df = spark.sql(query)
     return filtered_df, start_marker, end_marker
 
-
 def generate_filter_condition(start_marker, end_marker):
     filter_column = 'id'  # Replace with the actual column name
     return f"{filter_column} > {end_marker}"
 
 # Update Task Logger - Z-Ordered
 def update_task_logger(catalog_name, db_name, task_logger_table_name, end_marker, batch_size):
-    start_marker = min_id
-    end_marker = max_id
+    start_marker = end_marker + 1
+    end_marker = end_marker + batch_size
     print(f"start_marker : {start_marker}")
     print(f"end_marker : {end_marker}")
     # Determination of table name on which markers have been calculated
