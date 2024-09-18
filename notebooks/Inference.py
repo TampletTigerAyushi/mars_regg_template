@@ -85,7 +85,7 @@ parts = model_name.split('_')
 # COMMAND ----------
 
 for part in parts:
-    if part in ['USA', 'Canada', 'Mexico', 'Brazil','India ']:  # List of possible country names
+    if part in ['USA', 'Canada', 'Mexico', 'Brazil','India']:  # List of possible country names
         country = part
         break
 print(country)
