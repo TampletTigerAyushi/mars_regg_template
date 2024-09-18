@@ -87,6 +87,7 @@ for part in parts:
     if part in ['USA', 'Canada', 'Mexico', 'Brazil','India ']:  # List of possible country names
         country = part
         break
+print(country)
 
 # COMMAND ----------
 
@@ -294,7 +295,7 @@ mlclient.log(
 
 # COMMAND ----------
 
-tranformed_features_df = features_df.toPandas()
+tranformed_features_df = tranformed_features_df.toPandas()
 tranformed_features_df.dropna(inplace=True)
 tranformed_features_df.shape
 
@@ -459,15 +460,15 @@ compute_metrics['peakExecutionMemory'] = float(compute_metrics['peakExecutionMem
 
 # COMMAND ----------
 
-df_task = update_task_logger(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"],task_logger_table_name, batch_size,max_id,min_id)
-
-logger_table_path=f"{catalog_name}.{db_name}.{task_logger_table_name}"
-if catalog_name and catalog_name.lower() != "none": 
-    task_logger_table_path = logger_table_path
-else:
-    task_logger_table_path = spark.sql(f"desc {logger_table_path}").filter(F.col("col_name") == "Location").select("data_type").collect()[0][0]
-start_marker = min_id
-end_marker = max_id
+import time
+from datetime import datetime  
+from pyspark.sql.types import StructType, StructField, IntegerType,StringType
+if task.lower() != "fe":
+    df_task = update_task_logger(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"],task_logger_table_name,end_marker, batch_size)
+    if catalog_name:
+        db_name=f"{catalog_name}.{db_name}"
+    task_logger_table_path=f"{db_name}.{task_logger_table_name}"
+    print(task_logger_table_path)
 
 # COMMAND ----------
 
