@@ -1,7 +1,7 @@
 resources:
   jobs:
-    car_price_1609_azure_v2_USA_model_1709_1_inference:
-      name: car_price_1609_azure_v2_USA_model_1709_1_inference
+    Wind_Turbine_0408_azure_v2_inference:
+      name: Wind_Turbine_0408_azure_v2_inference
       type: Inference
       #is_deterministic: False
 
@@ -13,7 +13,7 @@ resources:
 
       email_notifications:
         on_failure:
-          - vamsi.podipireddi@tigeranalytics.com
+          - himanshu.bajpai@tigeranalytics.com
 
       tasks:
         - task_key: Inference
@@ -21,10 +21,6 @@ resources:
             notebook_path: /notebooks/Inference
             base_parameters:
               env: dev
-          timeout_seconds: 7200
-          libraries:
-            - maven:
-                coordinates: "ch.cern.sparkmeasure:spark-measure_2.12:0.24"
       
       access_control_list:
         - group_name: MLCore_Services

@@ -113,6 +113,10 @@ output_table_paths = get_name_space(output_table_configs)
 
 # COMMAND ----------
 
+flag=0
+
+# COMMAND ----------
+
 # Table Exists or Not
 def table_already_created(catalog_name, db_name, table_name):
     if catalog_name:
@@ -203,7 +207,7 @@ task_logger_table_name = f"{output_table_configs['output_1']['table']}_task_logg
 
 # COMMAND ----------
 
-features_df,start_marker,end_marker = get_the_batch_data(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"], input_table_paths['input_1'], task_logger_table_name, batch_size)
+transformed_features_df,start_marker,end_marker = get_the_batch_data(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"], input_table_paths['input_1'], task_logger_table_name, batch_size)
 
 gt_df,start_marker,end_marker = get_the_batch_data(output_table_configs["output_1"]["catalog_name"], output_table_configs["output_1"]["schema"], input_table_paths['input_2'], task_logger_table_name, batch_size)
 
@@ -212,12 +216,12 @@ print(end_marker)
 
 # COMMAND ----------
 
-features_df = spark.sql(f"SELECT * FROM {input_table_paths['input_1']}")
+transformed_features_df = spark.sql(f"SELECT * FROM {input_table_paths['input_1']}")
 
 # COMMAND ----------
 
 # Drop date, id, timestamp columns from the feature dataframe.
-features_df = features_df.drop("date", "id","timestamp")
+transformed_features_df = transformed_features_df.drop("date", "id","timestamp")
 
 # COMMAND ----------
 
@@ -323,6 +327,7 @@ type(predictions)
 # COMMAND ----------
 
 tranformed_features_df["prediction"] = predictions
+transformed_features_df = pd.merge(transformed_features_df,gt_df, on=input_table_configs["input_1"]["primary_keys"], how='inner')
 output_table = spark.createDataFrame(tranformed_features_df)
 
 # COMMAND ----------

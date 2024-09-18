@@ -205,7 +205,7 @@ if date_filters and date_filters['ground_truth_table_date_filters'] and date_fil
 # COMMAND ----------
 
 ground_truth_data = gt_data.select([input_table_configs["input_2"]["primary_keys"]] + target_columns)
-features_data = ft_data.select([input_table_configs["input_1"]["primary_keys"]] + feature_columns + ['Country'])
+features_data = ft_data.select([input_table_configs["input_1"]["primary_keys"]] + feature_columns)
 
 # COMMAND ----------
 

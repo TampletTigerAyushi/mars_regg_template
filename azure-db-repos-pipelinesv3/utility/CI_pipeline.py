@@ -17,9 +17,6 @@ group_name = sys.argv[9]
 
 databricks_scope = "2ff814a6-3304-4ab8-85cb-cd0e6f879c1d/.default"
 
-if branch.upper() == "QA":
-    parent_folder_path = f"{parent_folder_path}_QA"
-
 
 def get_access_tokens(client_id, scope, client_secret, tenant_id):
     """

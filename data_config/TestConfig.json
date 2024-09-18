@@ -1,0 +1,56 @@
+[
+  {
+    "model_test_module": "data_integrity",
+    "check_name": "MixedDataTypes",
+    "conditions": [
+      {
+        "condition_name": "rare_type_ratio_not_in_range",
+        "params": {
+          "ratio_range": [0.2, 1]
+        }
+      }
+    ]
+  },
+  {
+    "model_test_module": "data_integrity",
+    "check_name": "ConflictingLabels",
+    "conditions": [
+      {
+        "condition_name": "ratio_of_conflicting_labels_less_or_equal",
+        "params": {
+          "max_ratio": 0.3
+        } 
+      }
+    ]
+  },
+  {
+    "model_test_module": "train_test_validation",
+    "check_name": "DatasetsSizeComparison",
+    "conditions": [
+      {
+        "condition_name": "test_size_greater_or_equal",
+        "params": {
+          "value": 10000
+        }
+      },
+      {
+        "condition_name": "test_train_size_ratio_greater_than",
+        "params": {
+          "ratio": 0.2
+        }
+      }
+    ]
+  },
+  {
+    "model_test_module": "model_evaluation",
+    "check_name": "ModelInferenceTime",
+    "conditions": [
+      {
+        "condition_name": "inference_time_less_than",
+        "params": {
+          "value": 0.05
+        }
+      }
+    ]
+  }
+]

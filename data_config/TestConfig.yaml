@@ -1,0 +1,9 @@
+DataTests:
+  TrainTestCheck:
+    - check_name: "train_test_split"
+      threshold: 0.5
+      criteria: "greater_than"
+      
+    - check_name: "label_check"
+      threshold: 1
+      criteria: "greater_than"

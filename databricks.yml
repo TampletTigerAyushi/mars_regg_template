@@ -1,26 +1,30 @@
 # This is a Databricks asset bundle definition for default_python.
 # See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
-
 bundle:
   name: classification_dab1
+
 
 variables:
 
   job_cluster_key: common_job_cluster
 
+  libraries:
+  - maven:
+      coordinates: "ch.cern.sparkmeasure:spark-measure_2.12:0.24"
+  
   job_clusters:
-    - job_cluster_key: common_job_cluster
-      new_cluster:
-        num_workers: 1
-        spark_version: 13.3.x-cpu-ml-scala2.12
-        node_type_id: Standard_DS3_v2
-        init_scripts:
-          - workspace:
-              destination: /mlworkspace/packages/init_scripts/prod_initscripts_general.sh
+  - job_cluster_key: common_job_cluster
+    new_cluster:
+      num_workers: 1
+      spark_version: 9.1.x-cpu-ml-scala2.12
+      node_type_id: Standard_DS3_v2
+      init_scripts:
+        - workspace:
+            destination: /mlworkspace/packages/init_scripts/prod_initscripts_general.sh
 
 include:
   - resources/*.yml
-
+  
 targets:
   # The 'dev' target, for development purposes. This target is the default.
   dev:
@@ -34,9 +38,8 @@ targets:
       host: https://adb-1277783902121094.14.azuredatabricks.net
       root_path: /Workspace/Repos/${workspace.current_user.userName}/test_dab/.bundle/${bundle.name}/my-envs/${bundle.target}
       #root_path: /Workspace/Repos/MLOpsFlow/${workspace.current_user.userName}/.bundle/${bundle.name}/my-envs/${bundle.target}
-
-  # Optionally, there could be a 'staging' target here.
-  # (See Databricks docs on CI/CD at https://docs.databricks.com/dev-tools/bundles/ci-cd.html.)
+  ## Optionally, there could be a 'staging' target here.
+  ## (See Databricks docs on CI/CD at https://docs.databricks.com/dev-tools/bundles/ci-cd.html.)
   #
   # staging:
   #  workspace:

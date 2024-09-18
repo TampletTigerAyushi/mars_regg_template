@@ -1,7 +1,7 @@
 resources:
   pipelines:
     - pipeline: ciPipeline  # Local identifier for the dependency
-      source: SDK-car_price_Regressionv3/CI  # Path to the first pipeline's YAML file
+      source: wind_turbine_forecasting_UC_spark/CI  # Path to the first pipeline's YAML file
       trigger:
         branches:
           include:
@@ -100,9 +100,9 @@ stages:
             displayName: 'Job_Composer'
             inputs:
               scriptSource:  filePath
-              scriptPath: azure-db-repos-pipelinesv3/utility/job_automate.py
+              scriptPath: azure-db-repos-pipelinesv3/utility/job_automate.py        
               arguments: $(projectName) ${{ parameters.repo_parent_folder }} $(DATABRICKS_HOST) $(DATABRICKS_TOKEN) $(DEPLOY_ENV) $(API_BASE_URL) $(AZ_CLIENT_ID) $(AZ_CLIENT_SECRET) $(AZ_TENANT) $(System.DefinitionId) ${{ parameters.user_group_name }} $(Build.BuildId) $(Build.DefinitionName) $(System.CollectionUri) $(System.TeamProject) ${{ parameters.model_name }} ${{ parameters.model_version }} ${{ parameters.env }} ${{ parameters.api_trigger }} ${{ parameters.model_approval_id }} ${{ parameters.model_artifact_id }}
-
+              
           - task: PythonScript@0
             displayName: 'Create train_meta_job'
             inputs:
@@ -125,7 +125,6 @@ stages:
               scriptSource:  filePath
               scriptPath: azure-db-repos-pipelinesv3/utility/devops_observability.py
               arguments: $(API_BASE_URL) $(AZ_CLIENT_ID) $(AZ_CLIENT_SECRET) $(AZ_TENANT) $(DEPLOY_ENV) $(Build.Repository.Uri) $(Build.SourceVersion) "$(Build.RequestedFor)" $(Build.DefinitionName) $(System.DefinitionId) $(Build.BuildId) $(Build.SourceBranch) $(System.TeamProject) $(System.CollectionUri) ${{ parameters.repo_parent_folder }} $(DATABRICKS_HOST) $(AZURE_DEVOPS_PAT) "Train_Meta_Job" "Retrain_Meta_Job" ${{ parameters.model_name }} ${{ parameters.api_trigger }} ${{ parameters.model_approval_id }} ${{ parameters.model_artifact_id }}
-          
 
           
 
