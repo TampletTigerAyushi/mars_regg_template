@@ -6,6 +6,8 @@
 
 # MAGIC
 # MAGIC %pip install sparkmeasure
+# MAGIC # %pip install numpy==1.19.1
+# MAGIC # %pip install pandas==1.0.5
 
 # COMMAND ----------
 
@@ -77,8 +79,14 @@ batch_size = int(solution_config["inference"].get("batch_size",500))
 cron_job_schedule = solution_config["inference"].get("cron_job_schedule","0 */10 * ? * *")
 model_name = model_configs.get("model_params").get("model_name")
 parts = model_name.split('_')
-country = parts[4]
-print(f"Country : {country}")
+
+
+# COMMAND ----------
+
+for part in parts:
+    if part in ['USA', 'Canada', 'Mexico', 'Brazil','India ']:  # List of possible country names
+        country = part
+        break
 
 # COMMAND ----------
 
