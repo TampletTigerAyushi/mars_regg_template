@@ -224,7 +224,7 @@ transformed_features_df = transformed_features_df.drop("date", "id","timestamp")
 
 # COMMAND ----------
 
-if not features_df.first():
+if not transformed_features_df.first():
   dbutils.notebook.exit("No data is available for inference, hence exiting the notebook")
 
 # COMMAND ----------
