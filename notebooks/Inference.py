@@ -204,7 +204,7 @@ def update_task_logger(catalog_name, db_name, task_logger_table_name, end_marker
 
 # COMMAND ----------
 
-task_logger_table_name = f"{output_table_configs['output_1']['table']}_task_logger"
+task_logger_table_name = f"{output_table_configs['output_1']['table']}_{country}_task_logger"
 
 # COMMAND ----------
 
