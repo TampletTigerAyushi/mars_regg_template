@@ -31,6 +31,7 @@ stagemetrics.begin()
 import yaml
 import json
 import ast
+import pandas as pd
 from MLCORE_SDK import mlclient
 
 
@@ -296,6 +297,7 @@ mlclient.log(
 # COMMAND ----------
 
 tranformed_features_df = transformed_features_df.toPandas()
+ground_truth_df = gt_df.toPandas()
 tranformed_features_df.dropna(inplace=True)
 tranformed_features_df.shape
 
@@ -327,7 +329,7 @@ type(predictions)
 # COMMAND ----------
 
 tranformed_features_df["prediction"] = predictions
-tranformed_features_df = pd.merge(tranformed_features_df,gt_df, on=input_table_configs["input_1"]["primary_keys"], how='inner')
+tranformed_features_df = pd.merge(tranformed_features_df,ground_truth_df, on=input_table_configs["input_1"]["primary_keys"], how='inner')
 output_table = spark.createDataFrame(tranformed_features_df)
 
 # COMMAND ----------
