@@ -325,7 +325,13 @@ type(predictions)
 # COMMAND ----------
 
 tranformed_features_df["prediction"] = predictions
-tranformed_features_df = pd.merge(tranformed_features_df,ground_truth_df, on=input_table_configs["input_1"]["primary_keys"], how='inner')
+# tranformed_features_df = pd.merge(tranformed_features_df,ground_truth_df, on=input_table_configs["input_1"]["primary_keys"], how='inner')
+tranformed_features_df = pd.merge(
+    tranformed_features_df,
+    ground_truth_df,
+    on=input_table_configs["input_1"]["primary_keys"],
+    how='left'
+)
 output_table = spark.createDataFrame(tranformed_features_df)
 
 # COMMAND ----------
