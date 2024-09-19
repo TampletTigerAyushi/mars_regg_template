@@ -122,7 +122,7 @@ train:
       tracking_env: dev
       host_url: https://adb-1277783902121094.14.azuredatabricks.net
     model_params:   
-      model_name: car_price_1909_Canada_model_1709_1
+      model_name: car_price_1909_India_model_1709_1
   storage_configs:
     cloud_provider: azure
     params:
