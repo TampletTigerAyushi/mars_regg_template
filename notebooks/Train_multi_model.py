@@ -319,6 +319,19 @@ model = MultiModel(coeff_df=coeff_df, segment_col='Country', model_cls=LinearReg
 
 # COMMAND ----------
 
+segment_col = 'Country'
+df[df['Country']=='india']
+
+# COMMAND ----------
+
+y = model.predict(df.drop(target_columns, axis=1))
+
+# COMMAND ----------
+
+from sklearn.metrics import mean_squared_error
+
+# COMMAND ----------
+
 
 
 # COMMAND ----------
