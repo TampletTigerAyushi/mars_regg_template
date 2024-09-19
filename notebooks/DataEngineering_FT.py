@@ -271,23 +271,3 @@ def get_job_id_run_id(dbutils):
 
     return job_id, run_id
 
-
-# COMMAND ----------
-
-job_id, run_id = get_job_id_run_id(dbutils)
-
-# COMMAND ----------
-
-try:
-    dbutils.notebook.run(
-        "DataAnalysis", 
-        timeout_seconds=0,
-        arguments={
-            "table_path" : input_table_paths['source_1'],
-            "storage_configs" : json.dumps(storage_configs),
-            "env" : env,
-            "job_id": job_id,
-            "run_id" : run_id
-        })
-except:
-    pass
