@@ -1,7 +1,7 @@
 resources:
   jobs:
-    car_price_1909_India_model_1709_1_inference:
-      name: car_price_1909_India_model_1709_1_inference
+    car_price_1909_USA_model_1709_1_inference:
+      name: car_price_1909_USA_model_1709_1_inference
       type: Inference
       #is_deterministic: False
 
