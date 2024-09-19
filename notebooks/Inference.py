@@ -217,10 +217,6 @@ print(end_marker)
 
 # COMMAND ----------
 
-transformed_features_df = spark.sql(f"SELECT * FROM {input_table_paths['input_1']}")
-
-# COMMAND ----------
-
 # Drop date, id, timestamp columns from the feature dataframe.
 transformed_features_df = transformed_features_df.drop("date", "id","timestamp")
 

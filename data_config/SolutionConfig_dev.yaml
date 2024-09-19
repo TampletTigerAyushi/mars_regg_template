@@ -1,6 +1,6 @@
 general_configs : 
   sdk_session_id:
-    dev: c91d24b8e3274f6b8a59f08d6fdb15aa
+    dev: c14268ed42fb4f60b9c2dc2e62dbc471
     uat: 0bef83f35cd94bdcb2eefef9b7d57e75
     prod: 64ec92d6117247877965d152
   tracking_env: dev
@@ -18,8 +18,8 @@ data_engineering_ft:
     output_tables :
       output_1 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: car_price_hive_ft_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: car_price_hive_ft_1909_azure_v1
         primary_keys: index
   storage_configs:
     cloud_provider: azure
@@ -41,8 +41,8 @@ data_engineering_gt:
     output_tables :
       output_1 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: car_price_hive_gt_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: car_price_hive_gt_1909_azure_v1
         primary_keys: index
   storage_configs:
     cloud_provider: azure
@@ -58,14 +58,14 @@ feature_pipelines_ft:
     input_tables :
       input_1 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: car_price_hive_ft_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: car_price_hive_ft_1909_azure_v1
         primary_keys: index
     output_tables :
         output_1 :
           catalog_name : null
-          schema : car_price_hive_db_18_azure_v1
-          table: transformed_car_price_hive_ft_18_azure_v1
+          schema : car_price_hive_db_1909_azure_v1
+          table: transformed_car_price_hive_ft_1909_azure_v1
           primary_keys: index
   storage_configs:
     cloud_provider: azure
@@ -79,14 +79,14 @@ feature_pipelines_gt:
     input_tables : 
       input_1 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: car_price_hive_gt_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: car_price_hive_gt_1909_azure_v1
         primary_keys: index
     output_tables : 
         output_1 :
           catalog_name : null
-          schema : car_price_hive_db_18_azure_v1
-          table: transformed_car_price_hive_gt_18_azure_v1
+          schema : car_price_hive_db_1909_azure_v1
+          table: transformed_car_price_hive_gt_1909_azure_v1
           primary_keys: index  
   storage_configs:
     cloud_provider: azure
@@ -100,19 +100,19 @@ train:
     input_tables : 
       input_1 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: transformed_car_price_hive_ft_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: transformed_car_price_hive_ft_1909_azure_v1
         primary_keys: index
       input_2 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: transformed_car_price_hive_gt_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: transformed_car_price_hive_gt_1909_azure_v1
         primary_keys: index
     output_tables : 
         output_1 :
           catalog_name : null
-          schema : car_price_hive_db_18_azure_v1
-          table: trainoutput_car_price_18_azure_v1
+          schema : car_price_hive_db_1909_azure_v1
+          table: trainoutput_car_price_1909_azure_v1
           primary_keys: index
   model_configs:
     registry_platform: databricks
@@ -122,7 +122,7 @@ train:
       tracking_env: dev
       host_url: https://adb-1277783902121094.14.azuredatabricks.net
     model_params:   
-      model_name: car_price_18_azure_v2_USA_model_1709_1
+      model_name: car_price_1909
   storage_configs:
     cloud_provider: azure
     params:
@@ -159,14 +159,14 @@ data_prep_deployment_ft:
     input_tables :
       input_1 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: car_price_hive_ft_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: car_price_hive_ft_1909_azure_v1
         primary_keys: index
     output_tables :
         output_1 :
           catalog_name : null
-          schema : car_price_hive_db_18_azure_v1
-          table: dpd_car_price_ft_18_azure_v1
+          schema : car_price_hive_db_1909_azure_v1
+          table: dpd_car_price_ft_1909_azure_v1
           primary_keys: index  
   storage_configs:
     cloud_provider: azure
@@ -182,14 +182,14 @@ data_prep_deployment_gt:
     input_tables :
       input_1 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: car_price_hive_gt_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: car_price_hive_gt_1909_azure_v1
         primary_keys: index
     output_tables : 
         output_1 :
           catalog_name : null
-          schema : car_price_hive_db_18_azure_v1
-          table: dpd_car_price_gt_18_azure_v1
+          schema : car_price_hive_db_1909_azure_v1
+          table: dpd_car_price_gt_1909_azure_v1
           primary_keys: index  
   storage_configs:
     cloud_provider: azure
@@ -205,19 +205,19 @@ inference:
     input_tables : 
       input_1 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: dpd_car_price_ft_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: dpd_car_price_ft_1909_azure_v1
         primary_keys: index
       input_2 :
         catalog_name : null
-        schema : car_price_hive_db_18_azure_v1
-        table: dpd_car_price_gt_18_azure_v1
+        schema : car_price_hive_db_1909_azure_v1
+        table: dpd_car_price_gt_1909_azure_v1
         primary_keys: index
     output_tables : 
         output_1 :
           catalog_name : null
-          schema : car_price_hive_db_18_azure_v1
-          table: inference_car_price_18_azure_v1
+          schema : car_price_hive_db_1909_azure_v1
+          table: inference_car_price_1909_azure_v1
           primary_keys: index
   is_scheduled: true
   batch_size: 4000
